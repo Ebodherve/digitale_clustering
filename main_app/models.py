@@ -30,3 +30,5 @@ class SegmentAttribut(Model):
 	jeu_de_donnees = models.ForeignKey(JeuDeDonnees, on_delete=models.CASCADE)
 
 
+
+
