@@ -1,16 +1,17 @@
 #Ce module contient les classes permettant de segmenter les points de ventes
 #
 #---------------------------------------------------------------------------#
+
 import numpy as np
 from scipy.spatial.distance import cdist
 import pandas as pd
 
-import preprocess_data
+from clustering import preprocess_data
 
 
 class KmeanClustering:
 
-	def __init__(self, x, k, no_of_iterations=10000, distance='euclidean'):
+	def __init__(self, x, k, no_of_iterations=1000, distance='euclidean'):
 
 		self.x = x
 		self.k = k
@@ -74,7 +75,9 @@ def culster_data_pdv(path_data, nb_of_clusters):
 	#Arrangement des clusters dans un data frame
 	clusters_pdv = kmeanpdv.clusters()
 	clusters_pdv = pd.DataFrame({col_pdv:pdv, "classes":clusters_pdv})
-	print(clusters_pdv)
+
+	del data_vect_pdv
+	del kmeanpdv
 
 	return clusters_pdv
 
@@ -87,7 +90,5 @@ if __name__=="__main__":
 
 	path_data = ""
 	culster_data_pdv(path_data+"actionlog_week_202204150848.csv", 10)
-
-
 
 

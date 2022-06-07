@@ -14,7 +14,8 @@ class EntrepriseModel(Model):
 class JeuDeDonneesModel(Model):
 	nom = models.CharField(max_length=255)
 	data = models.FileField(upload_to="media/dataset")
-	clusters = models.FileField(upload_to="media/dataset")
+	clusters = models.FileField(upload_to="media/clusters", null=True)
+	nb_clusters = models.IntegerField(default=0)
 	entreprise = models.ForeignKey(EntrepriseModel, on_delete=models.CASCADE, null=True)
 
 
