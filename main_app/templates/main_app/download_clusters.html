@@ -6,8 +6,13 @@
 	<title>envoi de fichier en html</title>
 </head>
 <body>
+	Telecharger les differents clusters : 
 	<div>
-		{% for  %}
+		{% for cluster in liste_cluster %}
+		<div>
+			<a href="{% url 'download_cluster' id_data cluster %}"> cluster : {{ cluster }} </a>
+		</div>
+		{% endfor %}
 	</div>
 </body>
 </html>

@@ -3,16 +3,14 @@
 <head>
 	<meta charset="utf-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
-	<title>Segmentation</title>
+	<title>Conformité des données</title>
 </head>
 <body>
 	<div>
-		Entrez le nombre de segments
-		<form method="post">
-			{% csrf_token %}
-			{{ form }}
-		<input type="submit" name="">
-		</form>
+		Vos données ne sont pas conformes 
+	</div>
+	<div>
+		<a href="{% url 'upload' %}">Recharger vos données ici</a>
 	</div>
 </body>
 </html>

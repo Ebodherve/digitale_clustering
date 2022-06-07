@@ -53,7 +53,7 @@ class AdaptationDataForm(forms.Form):
 
 class NbClustersForm(forms.Form):
 
-	nb_clusters = forms.IntegerField()
+	nb_clusters = forms.CharField()
 
 
 class FiltreAttributForm(forms.Form):

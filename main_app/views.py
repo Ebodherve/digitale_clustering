@@ -9,6 +9,8 @@ import numpy as np
 
 import csv
 from pathlib import Path
+import numpy as np
+import os
 
 from main_app import forms as fm
 from main_app import models
@@ -49,26 +51,26 @@ class ConnexionView(TemplateView):
 				data = models.JeuDeDonneesModel.objects.filter(entreprise=entreprise)
 				if data.exists():
 					data = data.first()
-					return redirect(f"affichedata/{data.id}/", foo=AfficheDataView)
+					return redirect(f"/affichedata/{data.id}/", foo=AfficheDataView)
 				else:
-					return redirect("upload", foo=UploadView)
+					return redirect("/upload/", foo=UploadView)
 			else:
-				return redirect("inscription", foo=InscriptionView)
+				return redirect("/inscription/", foo=InscriptionView)
 		else:
-			return redirect("connexion", foo=ConnexionView)
+			return redirect("/connexion/", foo=ConnexionView)
 
 
 class InscriptionView(TemplateView):
 
 	def get(self, request):
-		return render(request, "main_app/inscription.html", {"form":forms.InscriptionForm()})
+		return render(request, "main_app/inscription.html", {"form":fm.InscriptionForm()})
 
 	def post(self, request):
 		inscrit = fm.InscriptionForm(self.request.POST)
 		if inscrit.is_valid():
 			user = inscrit.save()
 			login(request, user)
-			return redirect("upload", foo=UploadView)
+			return redirect("/upload/", foo=UploadView)
 		else:
 			ctx = {}
 			return render(request, "main_app/inscription.html", ctx)
@@ -84,7 +86,7 @@ class UploadView(TemplateView):
 		form = fm.UploadDataForm(request.POST, request.FILES)
 		if form.is_valid():
 			id_data=form.save()
-			return redirect(f"adapte/{id_data}/", foo=AfficheDataView)
+			return redirect(f"/adapte/{id_data}/", foo=AfficheDataView)
 		return render(request, 'main_app/upload.html', {"form":form})
 
 
@@ -92,32 +94,39 @@ class PreprocessView(TemplateView):
 
 	def get(self, request, id):
 		jeu_actuelle =  models.JeuDeDonneesModel.objects.get(pk=id)
-		path_data = jeu_actuelle.file.name
+		path_data = jeu_actuelle.data.name
 		data = pd.read_csv(path_data)
 		context = {"id": id, "columns" : []}
+		a_une_vm = 0
 		for col in data.columns:
 			val_manquante = data[col].isnull().sum()
 			context["columns"].append(Cellule(col,val_manquante))
-		return render(request, 'main_app/preprocess1.html', context)
+			a_une_vm += val_manquante
+		if a_une_vm>0:
+			return render(request, 'main_app/suppresion_vm.html', context)
+		else:
+			return redirect(f"/verifi_data/{id}/", foo=VerificationDataView)
 
 	def post(self, request, id):
 		jeu_actuelle =  models.JeuDeDonneesModel.objects.get(pk=id)
-		path_data = jeu_actuelle.file.name
+		path_data = jeu_actuelle.data.name
 		data = pd.read_csv(path_data)
-		new_col = [col for col in data.columns if data[col].isnull().sum()==0]
-		data = data[new_col]
+		for col in data.columns:
+			#Selection des données non manquantes
+			col_valm = [not val for val in data[col].isnull()]
+			data = data[col_valm]
 		data["id"] = np.arange(len(data))
 		data.set_index("id", inplace=True)
 		data.reset_index()
 		data.to_csv(path_data)
-		return redirect(f"/preprocess1/{id}", foo=PreprocessView)
+		return redirect(f"/verifi_data/{id}/", foo=VerificationDataView)
 
 
 class AfficheDataView(TemplateView):
 
 	def get(self, request, id):
 		jeu_actuelle =  models.JeuDeDonneesModel.objects.get(pk=id)
-		path_data = jeu_actuelle.file.name
+		path_data = jeu_actuelle.data.name
 		data = pd.read_csv(path_data)
 		context = {"data": data}
 		return render(request, "main_app/affichage.html", context)
@@ -128,7 +137,7 @@ class AdaptationDataView(TemplateView):
 	def get(self, request, id):
 		jeu_actuelle =  models.JeuDeDonneesModel.objects.get(pk=id)
 		formulaire = fm.AdaptationDataForm()
-		path_data = jeu_actuelle.file.name
+		path_data = jeu_actuelle.data.name
 		data = pd.read_csv(path_data)
 		colonnes = data.columns
 		colonnes = [(c, c) for c in colonnes]
@@ -143,26 +152,33 @@ class AdaptationDataView(TemplateView):
 	def post(self, request, id):
 		formulaire = fm.AdaptationDataForm(request.POST)
 		jeu_actuelle =  models.JeuDeDonneesModel.objects.get(pk=id)
-		path_data = jeu_actuelle.file.name
+		path_data = jeu_actuelle.data.name
 		data = pd.read_csv(path_data)
 		
 		formulaire.is_valid()
 		colonnes = list(formulaire.cleaned_data.keys())
 		for col in colonnes :
 			data[col] = data[formulaire.cleaned_data[col]]
-		data = data[colonnes]
+		data.to_csv(path_data)
 		data["id"] = np.arange(len(data))
 		data.set_index("id", inplace=True)
 		data.reset_index()
-		data.to_csv(path_data)
-		return redirect(f"/affichedata/{id}/", foo=AfficheDataView)
+		return redirect(f"/supp_vm/{id}/", foo=AfficheDataView)
 
 
 class VerificationDataView(TemplateView):
 
 	def get(self, request, id):
-
-
+		jeu_actuelle =  models.JeuDeDonneesModel.objects.get(pk=id)
+		path_data = jeu_actuelle.data.name
+		data = pd.read_csv(path_data)
+		data_conforme = True
+		if data["montant"].dtype != np.dtype("float") and data["montant"].dtype!=np.dtype("int") :
+			jeu_actuelle.delete()
+			os.remove(path_data)
+			data_conforme = False
+			return render(request, "main_app/data_non_comforme.html",)
+		return redirect(f"/segmentation/{id}/", foo=SegmentationView)
 
 class TelechargerView(TemplateView):
 
@@ -182,25 +198,32 @@ class TelechargerView(TemplateView):
 class SegmentationView(TemplateView):
 
 	def get(self, request, id):
-		context = {"form": fm.NbClustersForm()}
-		return render(request, "main_app/download_clusters.html",)
+		formulaire = fm.NbClustersForm()
+		formulaire.fields["nb_clusters"] = forms.IntegerField()
+		context = {"form": formulaire}
+		return render(request, "main_app/segmentation.html",context)
 
 	def post(self, request, id):
-		form = fm.NbClustersForm(request)
+		form = fm.NbClustersForm(self.request.POST)
 		form.is_valid()
-		nb_segment = form.cleaned_data["nb_clusters"]
+		nb_segment = int(form.cleaned_data["nb_clusters"])
+		nb_segment = nb_segment if nb_segment>0 else -1*nb_clusters
 		jeu_actuelle =  models.JeuDeDonneesModel.objects.get(pk=id)
-		path_data = jeu_actuelle.file.name
+		path_data = jeu_actuelle.data.name
 		cluster = culster_data_pdv(path_data, nb_segment)
-		path_data = "/".join(path_data.split("/")[:-2])+'/clusters/'+f"segment_{id}.csv"
+		path_data = f"segment_{id}.csv"
 		cluster.to_csv(path_data)
 		path = Path(path_data)
 		f = path.open(mode="r")
+		try:
+			os.remove(jeu_actuelle.clusters.name)
+		except:
+			pass
 		jeu_actuelle.clusters = File(f, name=path.name)
 		jeu_actuelle.nb_clusters = nb_segment
 		jeu_actuelle.save()
 		
-		redirect(f"", foo=DownloadSegmentView)
+		return redirect(f"/telechargement/{id}/{nb_segment}/", foo=DownloadSegmentView)
 
 
 class DownloadSegmentView(TemplateView):
