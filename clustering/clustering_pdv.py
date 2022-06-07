@@ -11,15 +11,17 @@ from clustering import preprocess_data
 
 class KmeanClustering:
 
-	def __init__(self, x, k, no_of_iterations=1000, distance='euclidean'):
+	def __init__(self, data, k, no_of_iterations=1000, distance='euclidean'):
 
-		self.x = x
+		self.x = data
 		self.k = k
 		self.no_of_iterations = no_of_iterations
 		self.distance = distance
 		self.__clusters = None
 
-	def entrainnement(self):
+	def entrainnement(self, normalisation=True):
+		if normalisation:
+			self.norm_pos_supp()
 		x = self.x
 		k = self.k
 		distance = self.distance
@@ -53,11 +55,31 @@ class KmeanClustering:
 
 		self.__clusters = points 
 
+	def norm_pos_supp(self):
+		#normalisation du jeu des données et suppression de colonnes inutiles
+		data = self.x
+		colonnes = data.columns
+		col = colonnes[0]
+		ppetit = min(data[col])
+		pgrand = max(data[col])
+		diff = pgrand-ppetit
+		df = pd.DataFrame()
+		if pgrand!=0:
+			df[col] = data[col].apply(lambda x: (x-ppetit)/diff)
+		for col in colonnes[1:]:
+			ppetit = min(data[col])
+			pgrand = max(data[col])
+			diff = pgrand-ppetit
+			if pgrand!=0:
+				df[col] = data[col].apply(lambda x: (x-ppetit)/diff)
+		self.x = df
+
+
 	def clusters(self):
 		return self.__clusters
 
 
-def culster_data_pdv(path_data, nb_of_clusters):
+def culster_data_pdv_kmean(path_data, nb_of_clusters):
 	#Lecture et transformation du jeux de données
 	df = pd.read_csv(path_data)
 	col_pdv = "pdv"

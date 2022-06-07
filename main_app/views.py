@@ -14,7 +14,7 @@ import os
 
 from main_app import forms as fm
 from main_app import models
-from clustering.clustering_pdv import culster_data_pdv
+from clustering.clustering_pdv import culster_data_pdv_kmean
 
 
 # Create your views here.
@@ -210,7 +210,7 @@ class SegmentationView(TemplateView):
 		nb_segment = nb_segment if nb_segment>0 else -1*nb_clusters
 		jeu_actuelle =  models.JeuDeDonneesModel.objects.get(pk=id)
 		path_data = jeu_actuelle.data.name
-		cluster = culster_data_pdv(path_data, nb_segment)
+		cluster = culster_data_pdv_kmean(path_data, nb_segment)
 		path_data = f"segment_{id}.csv"
 		cluster.to_csv(path_data)
 		path = Path(path_data)
