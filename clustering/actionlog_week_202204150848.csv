@@ -1,4 +1,4 @@
-id,nom_action,date_action,utilisateur,montant,soldeuser
+ id,nom_action,date_action,utilisateur,montant,soldeuser
 255440095,action_vente_mtn_momo_depot,2022-04-15 09:48:40.0,17070,5.33572373756776,20.3968219148869
 255440094,initialize_failed,2022-04-15 09:48:39.0,eneobangangte1,0.0,0.0
 255440093,action_login,2022-04-15 09:48:32.0,16666,0.0,0.0
